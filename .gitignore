@@ -1,6 +1,0 @@
-env/
-__pycache__/
-*.py[cod]
-command_outputs/
-.DS_Store
-Thumbs.db
