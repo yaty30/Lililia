@@ -1,1 +1,8 @@
-"# Lililia\n\nAn AI-powered command interface system.\n\n## Features\n\n- Command execution through natural language\n- Command management and processing\n- Configurable settings\n- Utility functions for system operations\n\n## Getting Started\n\nClone the repository and install dependencies to get started.\n\n```bash\ngit clone https://github.com/yaty30/Lililia.git\ncd Lililia\n# Install dependencies if needed\n```\n\n## Components\n\n- `main.py` - Entry point for the application\n- `command_executor.py` - Handles command execution\n- `command_manager.py` - Manages command processing\n- `config.py` - Configuration settings\n- `utils.py` - Utility functions\n" 
+# Lililia
+
+An AI-powered command interface system.
+## Features
+- Command execution through natural language
+- Command management and processing
+- Configurable settings
+- Utility functions for system operations
