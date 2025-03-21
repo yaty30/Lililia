@@ -8,6 +8,13 @@ import tkinter as tk
 from tkinter import scrolledtext, ttk
 import subprocess
 import threading
+
+# Import the logger
+from logger import get_logger
+
+# Initialize logger
+logger = get_logger("Lilia")
+
 import queue
 from poe_client import PoeClientWrapper
 from utils import extract_commands, extract_image_prompt, extract_image_urls

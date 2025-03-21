@@ -2,11 +2,17 @@ import os
 import tempfile
 from command_executor import execute_command
 from utils import extract_commands
+from logger import get_logger
+
+# Initialize logger
+logger = get_logger("CommandManager")
 
 # Create a dedicated folder for output files
 OUTPUT_DIR = os.path.join(os.getcwd(), "command_outputs")
 if not os.path.exists(OUTPUT_DIR):
     os.makedirs(OUTPUT_DIR)
+    logger.info(f"Created output directory: {OUTPUT_DIR}")
+
 
 async def execute_commands_with_review(client, commands):
     """Execute commands, save outputs to a file, and send file to bot for review."""
