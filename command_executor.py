@@ -4,10 +4,20 @@ import shlex
 from config import CMD_PREFIX_FILE, CMD_PREFIX_DIR, CMD_PREFIX_RUN, CMD_PREFIX_GIT, CMD_PREFIX_INSTALL
 from utils import expand_path
 
+# Add a flag to track if we've set up Git credentials
+git_credentials_configured = False
+
 def execute_command(cmd):
     """Execute a command extracted from the bot response and return the output."""
+    global git_credentials_configured
+    
     print(f"\nProcessing: {cmd}")
     result = {"stdout": "", "stderr": "", "returncode": None, "message": ""}
+    
+    # Automatically set up Git credentials if this is a git command and we haven't done it yet
+    if cmd.startswith(CMD_PREFIX_GIT) and not git_credentials_configured:
+        setup_git_credentials()
+        git_credentials_configured = True
     
     # File creation command
     if cmd.startswith(CMD_PREFIX_FILE):
@@ -34,6 +44,86 @@ def execute_command(cmd):
         result = handle_generic_command(cmd)
     
     return result
+
+def setup_git_credentials():
+    """Configure Git to store credentials permanently to avoid prompts."""
+    try:
+        print("Setting up Git credentials storage...")
+        
+        # Configure Git to store credentials
+        store_result = subprocess.run(
+            "git config --global credential.helper store",
+            shell=True,
+            capture_output=True,
+            text=True
+        )
+        
+        if store_result.returncode == 0:
+            print("Git credential storage configured successfully")
+        else:
+            print(f"Failed to configure Git credential storage: {store_result.stderr}")
+        
+        # For Windows: ensure we don't use modal dialogs for auth
+        if os.name == 'nt':
+            modal_result = subprocess.run(
+                "git config --global core.askPass \"\"",
+                shell=True,
+                capture_output=True,
+                text=True
+            )
+            
+            if modal_result.returncode == 0:
+                print("Git modal dialogs disabled")
+            else:
+                print(f"Failed to disable Git modal dialogs: {modal_result.stderr}")
+        
+        # Set default pull behavior to avoid merge commit messages
+        pull_result = subprocess.run(
+            "git config --global pull.rebase false",
+            shell=True,
+            capture_output=True,
+            text=True
+        )
+        
+        if pull_result.returncode == 0:
+            print("Git pull behavior configured")
+        
+        # Configure username and email if not already set
+        try:
+            username_check = subprocess.run(
+                "git config --global user.name",
+                shell=True,
+                capture_output=True,
+                text=True
+            )
+            
+            if not username_check.stdout.strip():
+                subprocess.run(
+                    "git config --global user.name \"Lililia User\"",
+                    shell=True
+                )
+                print("Default Git username configured")
+            
+            email_check = subprocess.run(
+                "git config --global user.email",
+                shell=True,
+                capture_output=True,
+                text=True
+            )
+            
+            if not email_check.stdout.strip():
+                subprocess.run(
+                    "git config --global user.email \"lililia@example.com\"",
+                    shell=True
+                )
+                print("Default Git email configured")
+        except Exception as e:
+            print(f"Error checking Git user configuration: {e}")
+            
+        return True
+    except Exception as e:
+        print(f"Error configuring Git credentials: {e}")
+        return False
 
 def handle_file_command(cmd):
     """Handle file creation commands."""
@@ -137,13 +227,22 @@ def handle_git_command(cmd):
         print(f"Executing git command: {git_cmd}")
         full_cmd = f"git {git_cmd}"
         
+        # Additional environment variables to prevent credential popups
+        env = os.environ.copy()
+        if os.name == 'nt':  # Windows
+            env['GIT_TERMINAL_PROMPT'] = '0'
+        else:  # Unix
+            env['GIT_TERMINAL_PROMPT'] = '0'
+            env['GIT_ASKPASS'] = '/bin/echo'
+        
         # Use shell=True on Windows if needed
         use_shell = os.name == 'nt' and ('&&' in git_cmd or '%' in git_cmd or '$' in git_cmd)
         proc_result = subprocess.run(
             full_cmd if use_shell else shlex.split(full_cmd),
             shell=use_shell,
             capture_output=True,
-            text=True
+            text=True,
+            env=env
         )
         
         result["stdout"] = proc_result.stdout
